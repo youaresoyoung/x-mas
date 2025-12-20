@@ -85,6 +85,6 @@ export const Snow = () => {
   }, []);
 
   return (
-    <canvas ref={canvasRef} className="absolute top-0 left-0 z-0"></canvas>
+    <canvas ref={canvasRef} className="absolute top-0 left-0 z-100"></canvas>
   );
 };
