@@ -1,4 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Bilbo&display=swap");
 @import "tailwindcss";
+
+@theme {
+  --font-bilbo: Bilbo, cursive;
+  --color-christmas-red: #c41e3a;
+  --color-christmas-green: #165b33;
+  --color-christmas-gold: #ffd700;
+  --color-snow-white: #fffafa;
+  --color-winter-blue: #e3f2fd;
+}
 
 :root {
   --bg-white: #f0f0f5;
