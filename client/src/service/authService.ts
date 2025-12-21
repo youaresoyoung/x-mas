@@ -1,10 +1,27 @@
-const STORAGE_KEY = "xmas_nickname";
+const STORAGE_KEY = "xmas_user";
 
 export class AuthService {
   constructor() {}
 
-  login(nickname: string) {
-    localStorage.setItem(STORAGE_KEY, nickname);
+  async login(nickname: string): Promise<{ color: string }> {
+    const response = await fetch("http://localhost:3000/api/entrance", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ nickname: nickname.trim() }),
+    });
+
+    const data = await response.json();
+    if (!data.available) {
+      throw new Error(data.error || "Failed to enter the Christmas Room.");
+    }
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ nickname, color: data.color })
+    );
+    return { color: data.color };
   }
 
   logout() {

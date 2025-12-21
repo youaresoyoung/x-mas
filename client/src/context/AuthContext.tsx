@@ -4,17 +4,18 @@ import type { AuthService } from "../service/authService";
 
 export interface User {
   nickname: string;
+  color: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  setNickname: (nickname: string) => void;
   logout: () => void;
+  login: (nickname: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_KEY = "xmas_nickname";
+const STORAGE_KEY = "xmas_user";
 
 type Props = {
   authService: AuthService;
@@ -23,14 +24,22 @@ type Props = {
 
 export function AuthProvider({ authService, children }: Props) {
   const [user, setUser] = useState<User | null>(() => {
-    const savedNickname = localStorage.getItem(STORAGE_KEY);
-    return savedNickname ? { nickname: savedNickname } : null;
+    const savedUser = localStorage.getItem(STORAGE_KEY);
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch {
+        return null;
+      }
+    }
+    return null;
   });
 
-  const setNickname = (nickname: string) => {
+  const login = async (nickname: string) => {
     const trimmed = nickname.trim();
-    setUser({ nickname: trimmed });
-    authService.login(trimmed);
+    const { color } = await authService.login(trimmed);
+    const newUser = { nickname: trimmed, color };
+    setUser(newUser);
   };
 
   const logout = () => {
@@ -39,7 +48,7 @@ export function AuthProvider({ authService, children }: Props) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setNickname, logout }}>
+    <AuthContext.Provider value={{ user, logout, login }}>
       {children}
     </AuthContext.Provider>
   );
