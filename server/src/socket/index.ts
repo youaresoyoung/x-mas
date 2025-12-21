@@ -1,16 +1,22 @@
 import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
-import type { User } from "./types.ts";
+import type { FloatingMessage, ServerToClientEvents, User } from "./types.ts";
+import { getUserColor } from "../utils/color.ts";
+
+type SocketServer = Server<ServerToClientEvents>;
 
 const connectedUsers = new Map<string, User>();
 const usedNicknames = new Set<string>();
+const activeMessages = new Map<string, FloatingMessage>();
+const messageTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function isNicknameInUse(nickname: string): boolean {
   return usedNicknames.has(nickname);
 }
 
 export class Socket {
-  io: Server;
+  io: SocketServer;
+  private MESSAGE_LIFETIME = 30000;
 
   constructor(server: HttpServer) {
     this.io = new Server(server, {
@@ -44,6 +50,7 @@ export class Socket {
 
       socket.data.userId = socket.id;
       socket.data.name = trimmed;
+      socket.data.color = getUserColor(socket.id);
 
       socket.once("disconnect", () => {
         usedNicknames.delete(trimmed);
@@ -57,16 +64,18 @@ export class Socket {
 
   private setupEventHandlers() {
     this.io.on("connection", (socket) => {
-      const { userId, name } = socket.data;
+      const { userId, name, color } = socket.data;
 
       const user: User = {
         userId,
         name,
+        color,
         cursor: { x: 0, y: 0 },
       };
 
       socket.emit("initial:state", {
         users: Array.from(connectedUsers.values()),
+        messages: [],
       });
 
       connectedUsers.set(userId, user);
@@ -74,24 +83,71 @@ export class Socket {
       socket.broadcast.emit("user:joined", {
         userId,
         name,
+        color: user.color,
         cursor: user.cursor,
       });
 
-      socket.on("cursor:move", (data: { x: number; y: number }) => {
-        const user = connectedUsers.get(userId);
-        if (user) {
-          user.cursor = { x: data.x, y: data.y };
-          socket.broadcast.emit("cursor:move", {
-            userId,
-            cursor: user.cursor,
-          });
+      socket.on(
+        "cursor:move",
+        (data: { userId: string; cursor: { x: number; y: number } }) => {
+          const user = connectedUsers.get(data.userId);
+          if (user) {
+            user.cursor = { x: data.cursor.x, y: data.cursor.y };
+            socket.broadcast.emit("cursor:move", {
+              userId: data.userId,
+              cursor: user.cursor,
+            });
+          }
         }
+      );
+
+      socket.on("message:typing", (data: { text: string }) => {
+        const existingTimeout = messageTimeouts.get(userId);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+        }
+
+        if (!data.text || data.text.trim() === "") {
+          activeMessages.delete(userId);
+          messageTimeouts.delete(userId);
+          this.io.emit("message:remove", { userId });
+          return;
+        }
+
+        const message: FloatingMessage = {
+          id: crypto.randomUUID(),
+          userId,
+          name,
+          text: data.text,
+          typing: true,
+        };
+
+        activeMessages.set(userId, message);
+
+        this.io.emit("message:typing", message);
+
+        const timeout = setTimeout(() => {
+          activeMessages.delete(userId);
+          messageTimeouts.delete(userId);
+          this.io.emit("message:remove", { userId });
+        }, this.MESSAGE_LIFETIME);
+
+        messageTimeouts.set(userId, timeout);
       });
 
       socket.on("disconnect", () => {
         const disconnectedUser = connectedUsers.get(userId);
+
         if (disconnectedUser) {
           connectedUsers.delete(userId);
+          usedNicknames.delete(disconnectedUser.name);
+
+          const timeout = messageTimeouts.get(userId);
+          if (timeout) {
+            clearTimeout(timeout);
+            messageTimeouts.delete(userId);
+          }
+          activeMessages.delete(userId);
 
           socket.broadcast.emit("user:left", {
             userId: disconnectedUser.userId,

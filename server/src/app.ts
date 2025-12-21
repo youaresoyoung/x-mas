@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
 import { initSoket, isNicknameInUse } from "./socket/index.ts";
+import { getUserColor } from "./utils/color.ts";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -36,9 +37,19 @@ app.post("/api/entrance", (req, res) => {
 
   const isAvailable = !isNicknameInUse(trimmed);
 
+  if (!isAvailable) {
+    return res.json({
+      available: false,
+      error: "This nickname is already in use",
+    });
+  }
+
+  const tempUserId = `${trimmed}-${Date.now()}`;
+  const color = getUserColor(tempUserId);
+
   return res.json({
-    available: isAvailable,
-    error: isAvailable ? null : "This nickname is already in use",
+    available: true,
+    color,
   });
 });
 
