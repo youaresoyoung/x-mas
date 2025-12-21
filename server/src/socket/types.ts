@@ -1,14 +1,29 @@
 export interface User {
   userId: string;
   name: string;
+  cursor: { x: number; y: number };
+}
+
+export interface InitialState {
+  users: User[];
 }
 
 export interface ServerToClientEvents {
-  "user:joined": (data: { userId: string; name: string }) => void;
+  "initial:state": (data: InitialState) => void;
+  "user:joined": (data: {
+    userId: string;
+    name: string;
+    cursor: { x: number; y: number };
+  }) => void;
   "user:left": (data: { userId: string }) => void;
+  "cursor:move": (data: {
+    userId: string;
+    cursor: { x: number; y: number };
+  }) => void;
 }
 
 export interface SocketData {
   userId: string;
   name: string;
+  cursor: { x: number; y: number };
 }

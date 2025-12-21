@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+// import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 
@@ -40,11 +40,11 @@ const router = createBrowserRouter([
 const authService = new AuthService();
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AuthProvider authService={authService}>
-      <SocketProvider>
-        <RouterProvider router={router} />
-      </SocketProvider>
-    </AuthProvider>
-  </StrictMode>
+  // <StrictMode>
+  <AuthProvider authService={authService}>
+    <SocketProvider>
+      <RouterProvider router={router} />
+    </SocketProvider>
+  </AuthProvider>
+  // </StrictMode>
 );

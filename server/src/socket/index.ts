@@ -57,22 +57,41 @@ export class Socket {
 
   private setupEventHandlers() {
     this.io.on("connection", (socket) => {
+      const { userId, name } = socket.data;
+
       const user: User = {
-        userId: socket.data.userId,
-        name: socket.data.name,
+        userId,
+        name,
+        cursor: { x: 0, y: 0 },
       };
 
-      connectedUsers.set(socket.id, user);
+      socket.emit("initial:state", {
+        users: Array.from(connectedUsers.values()),
+      });
+
+      connectedUsers.set(userId, user);
 
       socket.broadcast.emit("user:joined", {
-        userId: user.userId,
-        name: user.name,
+        userId,
+        name,
+        cursor: user.cursor,
+      });
+
+      socket.on("cursor:move", (data: { x: number; y: number }) => {
+        const user = connectedUsers.get(userId);
+        if (user) {
+          user.cursor = { x: data.x, y: data.y };
+          socket.broadcast.emit("cursor:move", {
+            userId,
+            cursor: user.cursor,
+          });
+        }
       });
 
       socket.on("disconnect", () => {
-        const disconnectedUser = connectedUsers.get(socket.id);
+        const disconnectedUser = connectedUsers.get(userId);
         if (disconnectedUser) {
-          connectedUsers.delete(socket.id);
+          connectedUsers.delete(userId);
 
           socket.broadcast.emit("user:left", {
             userId: disconnectedUser.userId,

@@ -26,6 +26,12 @@ export default class Socket {
     this.io.off(event);
   }
 
+  emit(event: string, data?: any) {
+    if (this.io.connected) {
+      this.io.emit(event, data);
+    }
+  }
+
   disconnect() {
     if (this.io.connected) {
       this.io.disconnect();
