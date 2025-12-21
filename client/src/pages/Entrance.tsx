@@ -1,4 +1,8 @@
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { useNavigate } from "react-router";
 import { TreePine, Sparkles, Snowflake, Gift, Candy } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const DECORATION_ICONS = [
   { icon: TreePine, color: "text-christmas-green" },
@@ -9,7 +13,65 @@ const DECORATION_ICONS = [
   { icon: TreePine, color: "text-christmas-green" },
 ];
 
+const validateNickname = (value: string): string | null => {
+  const trimmed = value.trim();
+
+  if (trimmed.length < 2) {
+    return "Nickname must be at least 2 characters";
+  }
+
+  if (trimmed.length > 10) {
+    return "Nickname must be at most 10 characters";
+  }
+
+  return null;
+};
+
 export default function Entrance() {
+  const [nickname, setNickname] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsSubmitting] = useState(false);
+
+  const { setNickname: saveNickname } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+
+    const validationError = validateNickname(nickname);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:3000/api/entrance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ nickname: nickname.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!data.available) {
+        throw new Error(data.error || "Failed to enter the Christmas Room.");
+      }
+
+      saveNickname(nickname.trim());
+      navigate("/");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <div className="relative max-w-md w-full mx-auto">
       <div className="relative bg-snow-white p-8 rounded-2xl shadow-2xl border-4 border-christmas-red flex flex-col gap-6">
@@ -33,7 +95,7 @@ export default function Entrance() {
           </p>
         </div>
 
-        <form className="flex flex-col gap-4 mt-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
           <div className="space-y-2">
             <label
               htmlFor="nickname"
@@ -47,22 +109,32 @@ export default function Entrance() {
               type="text"
               placeholder="Enter your nickname..."
               maxLength={10}
+              value={nickname}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setError("");
+              }}
               aria-label="Nickname"
               autoFocus
               required
+              disabled={isLoading}
             />
             <p className="text-xs text-gray-500 text-center">
-              Maximum 10 characters
+              2-10 characters (letters, numbers, spaces)
             </p>
+            {error && (
+              <p className="text-sm text-christmas-red text-center font-medium">
+                {error}
+              </p>
+            )}
           </div>
 
           <button
-            type="button"
-            onClick={() => {}}
-            className="w-full bg-christmas-green text-white font-bold py-3 px-6 rounded-lg hover:bg-christmas-red transition-all duration-200 text-lg flex items-center justify-center gap-2"
+            disabled={isLoading || !nickname.trim()}
+            className="w-full bg-christmas-green text-white font-bold py-3 px-6 rounded-lg hover:bg-christmas-red transition-all duration-200 text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <TreePine className="w-5 h-5" />
-            Enter the Christmas Room
+            {isLoading ? "Connecting..." : "Enter the Christmas Room"}
             <TreePine className="w-5 h-5" />
           </button>
         </form>
