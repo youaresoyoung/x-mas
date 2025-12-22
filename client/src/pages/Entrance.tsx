@@ -32,7 +32,7 @@ export default function Entrance() {
   const [error, setError] = useState("");
   const [isLoading, setIsSubmitting] = useState(false);
 
-  const { setNickname: saveNickname } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -48,21 +48,8 @@ export default function Entrance() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:3000/api/entrance", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ nickname: nickname.trim() }),
-      });
-
-      const data = await response.json();
-
-      if (!data.available) {
-        throw new Error(data.error || "Failed to enter the Christmas Room.");
-      }
-
-      saveNickname(nickname.trim());
+      const trimmedName = nickname.trim();
+      await login(trimmedName);
       navigate("/");
     } catch (err) {
       setError(
