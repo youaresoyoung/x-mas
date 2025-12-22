@@ -6,6 +6,7 @@ import treeMd from "../assets/svgs/tree_md.svg";
 import treeSm from "../assets/svgs/tree_sm.svg";
 import { useSocket } from "../context/SocketContext";
 import Cursors from "../components/Cursor";
+import { FloatingMessage } from "../components/FloatingMessage";
 
 const BACKGROUND_POSITION = [
   { img: backgroundSnow1, alt: "Background Snow first", zIndex: "z-30" },
@@ -57,6 +58,7 @@ export default function Home() {
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
       <Cursors />
+      <FloatingMessage />
       {BACKGROUND_POSITION.map((item) => (
         <img
           key={item.alt}
