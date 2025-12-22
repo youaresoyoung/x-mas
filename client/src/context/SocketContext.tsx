@@ -1,50 +1,42 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-  useCallback,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./AuthContext";
-import type { User } from "../network/types";
+import type { FloatingMessage, User } from "../network/types";
 import Socket from "../network/socket";
 
 interface SocketContextType {
-  socket: Socket | null;
+  socket: Socket;
   users: Map<string, User>;
+  messages: Map<string, FloatingMessage>;
+  emitTyping: (text: string, x: number, y: number) => void;
   emitCursorMove: (x: number, y: number) => void;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
-const SOCKET_URL = import.meta.env.DEV
-  ? import.meta.env.VITE_DEV_SERVER_URL
-  : import.meta.env.VITE_SERVER_URL;
+type Props = {
+  children: ReactNode;
+  socketClient: Socket;
+};
 
-export function SocketProvider({ children }: { children: ReactNode }) {
+export function SocketProvider({ children, socketClient }: Props) {
   const { user } = useAuth();
-  const socketRef = useRef<Socket | null>(null);
+
   const [users, setUsers] = useState<Map<string, User>>(new Map());
+  const [messages, setMessages] = useState<Map<string, FloatingMessage>>(
+    new Map()
+  );
 
   useEffect(() => {
     if (!user?.nickname) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (socketClient) {
+        socketClient.disconnect();
       }
       setUsers(new Map());
       return;
     }
 
-    if (socketRef.current) {
-      return;
-    }
-
-    const newSocket = new Socket(SOCKET_URL, user.nickname);
-
-    newSocket.on("initial:state", (data) => {
+    socketClient.on("initial:state", (data) => {
       setUsers((prev) => {
         const usersMap = new Map(prev);
         data.users.forEach((user: User) => {
@@ -54,19 +46,20 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    newSocket.on("user:joined", (data) => {
+    socketClient.on("user:joined", (data) => {
       setUsers((prev) => {
         const next = new Map(prev);
         next.set(data.userId, {
           userId: data.userId,
           name: data.name,
+          color: data.color,
           cursor: data.cursor || { x: 0, y: 0 },
         });
         return next;
       });
     });
 
-    newSocket.on("user:left", (data) => {
+    socketClient.on("user:left", (data) => {
       setUsers((prev) => {
         const next = new Map(prev);
         next.delete(data.userId);
@@ -74,7 +67,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    newSocket.on("cursor:move", (data) => {
+    socketClient.on("cursor:move", (data) => {
       setUsers((prev) => {
         const next = new Map(prev);
         const user = next.get(data.userId);
@@ -86,33 +79,59 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       });
     });
 
-    newSocket.connect();
-    socketRef.current = newSocket;
+    socketClient.on("message:typing", (data) => {
+      setMessages((prev) => {
+        const next = new Map(prev);
+        next.set(data.userId, data);
+        return next;
+      });
+    });
+
+    socketClient.on("message:remove", (data) => {
+      setMessages((prev) => {
+        const next = new Map(prev);
+        next.delete(data.userId);
+        return next;
+      });
+    });
+
+    socketClient.setNickname(user.nickname);
+    socketClient.connect();
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off("initial:state");
-        socketRef.current.off("user:joined");
-        socketRef.current.off("user:left");
-        socketRef.current.off("cursor:move");
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      socketClient.off("initial:state");
+      socketClient.off("user:joined");
+      socketClient.off("user:left");
+      socketClient.off("cursor:move");
+      socketClient.off("message:typing");
+      socketClient.off("message:remove");
+      socketClient.disconnect();
     };
   }, [user?.nickname]);
 
-  const emitCursorMove = useCallback((x: number, y: number) => {
-    if (socketRef.current) {
-      socketRef.current.emit("cursor:move", { x, y });
+  const emitCursorMove = (x: number, y: number) => {
+    if (socketClient) {
+      socketClient.emit("cursor:move", {
+        userId: socketClient.io.id,
+        cursor: { x, y },
+      });
     }
-  }, []);
+  };
+
+  const emitTyping = (text: string, x: number, y: number) => {
+    if (socketClient) {
+      socketClient.emit("message:typing", { text, x, y });
+    }
+  };
 
   return (
     <SocketContext.Provider
       value={{
-        socket: socketRef.current,
+        socket: socketClient,
         users,
+        messages,
         emitCursorMove,
+        emitTyping,
       }}
     >
       {children}

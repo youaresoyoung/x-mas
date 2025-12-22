@@ -12,6 +12,10 @@ export default class Socket {
     });
   }
 
+  setNickname(nickname: string) {
+    this.io.auth = { nickname };
+  }
+
   connect() {
     if (!this.io.connected) {
       this.io.connect();
