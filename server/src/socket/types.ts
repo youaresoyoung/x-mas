@@ -16,6 +16,7 @@ export interface FloatingMessage {
 export interface InitialState {
   users: User[];
   messages: FloatingMessage[];
+  lights: Record<string, boolean>;
 }
 
 export interface ServerToClientEvents {
@@ -34,6 +35,7 @@ export interface ServerToClientEvents {
   "message:send": (data: FloatingMessage) => void;
   "message:typing": (data: FloatingMessage) => void;
   "message:remove": (data: { userId: string }) => void;
+  "light:toggle": (data: { lightId: string; state: boolean }) => void;
 }
 
 export interface SocketData {

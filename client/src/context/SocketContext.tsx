@@ -8,8 +8,10 @@ interface SocketContextType {
   socket: Socket;
   users: Map<string, User>;
   messages: Map<string, FloatingMessage>;
+  lightStates: Map<string, boolean>;
   emitTyping: (text: string, x: number, y: number) => void;
   emitCursorMove: (x: number, y: number) => void;
+  emitLightToggle: (lightId: string) => void;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
@@ -24,6 +26,9 @@ export function SocketProvider({ children, socketClient }: Props) {
 
   const [users, setUsers] = useState<Map<string, User>>(new Map());
   const [messages, setMessages] = useState<Map<string, FloatingMessage>>(
+    new Map()
+  );
+  const [lightStates, setLightStates] = useState<Map<string, boolean>>(
     new Map()
   );
 
@@ -44,6 +49,8 @@ export function SocketProvider({ children, socketClient }: Props) {
         });
         return usersMap;
       });
+      setMessages(new Map());
+      setLightStates(new Map(Object.entries(data.lights)));
     });
 
     socketClient.on("user:joined", (data) => {
@@ -95,6 +102,14 @@ export function SocketProvider({ children, socketClient }: Props) {
       });
     });
 
+    socketClient.on("light:toggle", (data) => {
+      setLightStates((prev) => {
+        const next = new Map(prev);
+        next.set(data.lightId, data.state);
+        return next;
+      });
+    });
+
     socketClient.setNickname(user.nickname);
     socketClient.connect();
 
@@ -105,6 +120,7 @@ export function SocketProvider({ children, socketClient }: Props) {
       socketClient.off("cursor:move");
       socketClient.off("message:typing");
       socketClient.off("message:remove");
+      socketClient.off("light:toggle");
       socketClient.disconnect();
     };
   }, [user?.nickname]);
@@ -124,14 +140,20 @@ export function SocketProvider({ children, socketClient }: Props) {
     }
   };
 
+  const emitLightToggle = (lightId: string) => {
+    socketClient.emit("light:toggle", { lightId });
+  };
+
   return (
     <SocketContext.Provider
       value={{
         socket: socketClient,
         users,
         messages,
+        lightStates,
         emitCursorMove,
         emitTyping,
+        emitLightToggle,
       }}
     >
       {children}

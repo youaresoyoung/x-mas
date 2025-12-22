@@ -9,6 +9,7 @@ const connectedUsers = new Map<string, User>();
 const usedNicknames = new Set<string>();
 const activeMessages = new Map<string, FloatingMessage>();
 const messageTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+const lightStates = new Map<string, boolean>();
 
 export function isNicknameInUse(nickname: string): boolean {
   return usedNicknames.has(nickname);
@@ -76,6 +77,7 @@ export class Socket {
       socket.emit("initial:state", {
         users: Array.from(connectedUsers.values()),
         messages: [],
+        lights: Object.fromEntries(lightStates),
       });
 
       connectedUsers.set(userId, user);
@@ -133,6 +135,17 @@ export class Socket {
         }, this.MESSAGE_LIFETIME);
 
         messageTimeouts.set(userId, timeout);
+      });
+
+      socket.on("light:toggle", (data) => {
+        const currentState = lightStates.get(data.lightId) || false;
+        const newState = !currentState;
+        lightStates.set(data.lightId, newState);
+
+        this.io.emit("light:toggle", {
+          lightId: data.lightId,
+          state: newState,
+        });
       });
 
       socket.on("disconnect", () => {

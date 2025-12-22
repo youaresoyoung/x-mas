@@ -7,6 +7,7 @@ import treeSm from "../assets/svgs/tree_sm.svg";
 import { useSocket } from "../context/SocketContext";
 import Cursors from "../components/Cursor";
 import { FloatingMessage } from "../components/FloatingMessage";
+import { Star } from "../components/Star";
 
 const BACKGROUND_POSITION = [
   { img: backgroundSnow1, alt: "Background Snow first", zIndex: "z-30" },
@@ -19,17 +20,57 @@ const BACKGROUND_POSITION = [
 ];
 
 const TREES_POSITION = [
-  { img: treeSm, alt: "tree small left", position: "z-30 bottom-80 left-140" },
+  {
+    img: treeSm,
+    alt: "tree small left",
+    position: "z-30 bottom-80 left-140",
+    star: (
+      <Star
+        id="star-sm-left"
+        size={80}
+        className="absolute left-1/2 -translate-x-1/2 z-99"
+        style={{ top: "-40px" }}
+      />
+    ),
+  },
   {
     img: treeSm,
     alt: "tree small right",
     position: "z-30 bottom-80 right-140",
+    star: (
+      <Star
+        id="star-sm-right"
+        size={80}
+        className="absolute left-1/2 -translate-x-1/2 z-99"
+        style={{ top: "-40px" }}
+      />
+    ),
   },
-  { img: treeMd, alt: "tree medium left", position: "z-30 bottom-30 left-20" },
+  {
+    img: treeMd,
+    alt: "tree medium left",
+    position: "z-30 bottom-30 left-20",
+    star: (
+      <Star
+        id="star-md-left"
+        size={100}
+        className="absolute left-1/2 -translate-x-1/2 z-99"
+        style={{ top: "-50px" }}
+      />
+    ),
+  },
   {
     img: treeMd,
     alt: "tree medium right",
     position: "z-30 bottom-30 right-20",
+    star: (
+      <Star
+        id="star-md-right"
+        size={100}
+        className="absolute left-1/2 -translate-x-1/2 z-99"
+        style={{ top: "-50px" }}
+      />
+    ),
   },
 ];
 
@@ -68,12 +109,16 @@ export default function Home() {
         />
       ))}
       {TREES_POSITION.map((item) => (
-        <img
+        <div
           key={item.alt}
-          src={item.img}
-          alt={item.alt}
           className={`absolute ${item.position}`}
-        />
+          style={{ position: "absolute" }}
+        >
+          <div className="relative">
+            <img src={item.img} alt={item.alt} />
+            {item.star}
+          </div>
+        </div>
       ))}
     </div>
   );
