@@ -1,78 +1,9 @@
 import { useEffect, useRef, type MouseEvent } from "react";
-import backgroundSnow1 from "../assets/svgs/background_snow_1.svg";
-import backgroundSnow2 from "../assets/svgs/background_snow_2.svg";
-import backgroundSnow3 from "../assets/svgs/background_snow_3.svg";
-import treeMd from "../assets/svgs/tree_md.svg";
-import treeSm from "../assets/svgs/tree_sm.svg";
+
 import { useSocket } from "../context/SocketContext";
 import Cursors from "../components/Cursor";
 import { FloatingMessage } from "../components/FloatingMessage";
-import { Star } from "../components/Star";
-
-const BACKGROUND_POSITION = [
-  { img: backgroundSnow1, alt: "Background Snow first", zIndex: "z-30" },
-  {
-    img: backgroundSnow2,
-    alt: "Background Snow second",
-    zIndex: "z-20",
-  },
-  { img: backgroundSnow3, alt: "Background Snow third", zIndex: "z-10" },
-];
-
-const TREES_POSITION = [
-  {
-    img: treeSm,
-    alt: "tree small left",
-    position: "z-30 bottom-80 left-140",
-    star: (
-      <Star
-        id="star-sm-left"
-        size={80}
-        className="absolute left-1/2 -translate-x-1/2 z-99"
-        style={{ top: "-40px" }}
-      />
-    ),
-  },
-  {
-    img: treeSm,
-    alt: "tree small right",
-    position: "z-30 bottom-80 right-140",
-    star: (
-      <Star
-        id="star-sm-right"
-        size={80}
-        className="absolute left-1/2 -translate-x-1/2 z-99"
-        style={{ top: "-40px" }}
-      />
-    ),
-  },
-  {
-    img: treeMd,
-    alt: "tree medium left",
-    position: "z-30 bottom-30 left-20",
-    star: (
-      <Star
-        id="star-md-left"
-        size={100}
-        className="absolute left-1/2 -translate-x-1/2 z-99"
-        style={{ top: "-50px" }}
-      />
-    ),
-  },
-  {
-    img: treeMd,
-    alt: "tree medium right",
-    position: "z-30 bottom-30 right-20",
-    star: (
-      <Star
-        id="star-md-right"
-        size={100}
-        className="absolute left-1/2 -translate-x-1/2 z-99"
-        style={{ top: "-50px" }}
-      />
-    ),
-  },
-];
+import { BACKGROUND_POSITION, TREES_POSITION } from "../data/data";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
