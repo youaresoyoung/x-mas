@@ -48,6 +48,7 @@ export default function Home() {
           <div className="relative">
             <img src={item.img} alt={item.alt} />
             {item.star}
+            {item.balls}
           </div>
         </div>
       ))}
