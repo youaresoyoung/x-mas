@@ -4,8 +4,10 @@ import { useSocket } from "../context/SocketContext";
 import Cursors from "../components/Cursor";
 import { FloatingMessage } from "../components/FloatingMessage";
 import { BACKGROUND_POSITION, TREES_POSITION } from "../data/data";
+import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
+  const { logout } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { emitCursorMove } = useSocket();
@@ -29,6 +31,12 @@ export default function Home() {
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
+      <button
+        onClick={logout}
+        className="fixed z-50 top-4 right-4 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-200"
+      >
+        Exit
+      </button>
       <Cursors />
       <FloatingMessage />
       {BACKGROUND_POSITION.map((item) => (
