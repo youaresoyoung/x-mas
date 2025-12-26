@@ -4,7 +4,11 @@ export class AuthService {
   constructor() {}
 
   async login(nickname: string): Promise<{ color: string }> {
-    const response = await fetch("http://localhost:3000/api/entrance", {
+    const API_URL = import.meta.env.DEV
+      ? import.meta.env.VITE_DEV_SERVER_URL
+      : import.meta.env.VITE_SERVER_URL;
+
+    const response = await fetch(`${API_URL}/api/entrance`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

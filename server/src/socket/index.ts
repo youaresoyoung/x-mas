@@ -1,7 +1,7 @@
 import { Server as HttpServer } from "http";
 import { Server } from "socket.io";
-import type { FloatingMessage, ServerToClientEvents, User } from "./types.ts";
-import { getUserColor } from "../utils/color.ts";
+import type { FloatingMessage, ServerToClientEvents, User } from "./types.js";
+import { getUserColor } from "../utils/color.js";
 
 type SocketServer = Server<ServerToClientEvents>;
 

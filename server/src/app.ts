@@ -3,8 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
-import { initSoket, isNicknameInUse } from "./socket/index.ts";
-import { getUserColor } from "./utils/color.ts";
+import { initSoket, isNicknameInUse } from "./socket/index.js";
+import { getUserColor } from "./utils/color.js";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -23,6 +23,10 @@ app.use(
 );
 app.use(helmet());
 app.use(morgan("tiny"));
+
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "X-mas server is running" });
+});
 
 app.post("/api/entrance", (req, res) => {
   const { nickname } = req.body;
